@@ -1,4 +1,5 @@
 import React from 'react';
+import { motion } from 'motion/react';
 import { 
   Play, 
   Pause, 
@@ -7,7 +8,10 @@ import {
   Activity, 
   Sparkles, 
   Volume2, 
-  Compass 
+  Compass,
+  Save,
+  Trash2,
+  Plus
 } from 'lucide-react';
 import { Planet, ScalePreset, CelestialPreset, SynthParams } from '../types';
 import { SCALE_PRESETS, NOTES, CELESTIAL_PRESETS, ZODIAC_SIGNS } from '../constants';
@@ -28,14 +32,9 @@ interface ControlPanelProps {
   onToggleAudio: () => void;
   getPlanetNoteName: (planet: Planet) => string;
   getPlanetElementName: (planet: Planet) => string;
-  ascendantAngle: number;
-  onChangeAscendantAngle: (angle: number) => void;
-  mcAngle: number;
-  onChangeMcAngle: (angle: number) => void;
-  ascendantDroneActive: boolean;
-  onToggleAscendantDrone: () => void;
-  mcDroneActive: boolean;
-  onToggleMcDrone: () => void;
+  customPresets: CelestialPreset[];
+  onSavePreset: (name: string, description: string) => void;
+  onDeletePreset: (id: string) => void;
 }
 
 export default function ControlPanel({
@@ -53,17 +52,32 @@ export default function ControlPanel({
   onToggleAudio,
   getPlanetNoteName,
   getPlanetElementName,
-  ascendantAngle,
-  onChangeAscendantAngle,
-  mcAngle,
-  onChangeMcAngle,
-  ascendantDroneActive,
-  onToggleAscendantDrone,
-  mcDroneActive,
-  onToggleMcDrone
+  customPresets,
+  onSavePreset,
+  onDeletePreset
 }: ControlPanelProps) {
   
   const currentScale = SCALE_PRESETS.find(s => s.id === scaleId) || SCALE_PRESETS[0];
+
+  const [isSaving, setIsSaving] = React.useState(false);
+  const [presetName, setPresetName] = React.useState('');
+  const [presetDesc, setPresetDesc] = React.useState('');
+
+  const handleOpenSaveForm = () => {
+    const activePlanetCount = planets.filter(p => p.active).length;
+    const defaultName = `${rootNote} ${currentScale.name} Alignment (${activePlanetCount} Planets)`;
+    setPresetName(defaultName);
+    setPresetDesc(`Custom ambient configuration tuned to the ${currentScale.name} scale in the key of ${rootNote}.`);
+    setIsSaving(true);
+  };
+
+  const handleConfirmSave = () => {
+    if (!presetName.trim()) return;
+    onSavePreset(presetName.trim(), presetDesc.trim());
+    setIsSaving(false);
+    setPresetName('');
+    setPresetDesc('');
+  };
 
   const getScaleNotes = (intervals: number[]) => {
     const rootIndex = NOTES.indexOf(rootNote);
@@ -209,7 +223,7 @@ export default function ControlPanel({
         </div>
 
         {/* Module 2: Scale and Tuning Settings */}
-        <div className="bg-white/5 backdrop-blur-md border border-white/10 rounded-2xl p-5 shadow-2xl">
+        <div id="tuning-scales-section" className="bg-white/5 backdrop-blur-md border border-white/10 rounded-2xl p-5 shadow-2xl">
           <h2 className="text-sm font-semibold tracking-wider text-slate-300 uppercase flex items-center gap-2 mb-4">
             <Music className="w-4 h-4 text-indigo-400" />
             Tuning & Scales
@@ -346,154 +360,147 @@ export default function ControlPanel({
           </div>
         </div>
 
-        {/* Module: Natal Alignment & House Angles */}
-        <div className="bg-white/5 backdrop-blur-md border border-white/10 rounded-2xl p-5 shadow-2xl">
-          <h2 className="text-sm font-semibold tracking-wider text-slate-300 uppercase flex items-center gap-2 mb-4">
-            <Compass className="w-4 h-4 text-amber-400 animate-spin-slow" />
-            Natal Chart Angles (ASC/MC)
-          </h2>
-          
-          <p className="text-[11px] text-slate-400 mb-4 leading-relaxed">
-            Customize your birth chart Ascendant (Rising Sign) and Midheaven (MC). Activating the <strong>Ethereal Drone</strong> blends a continuous harmonic sub-tone mapped to the Ascendant's cosmic element into the soundscape.
-          </p>
 
-          <div className="grid grid-cols-2 gap-4 mb-4">
-            <div>
-              <label className="block text-[10px] uppercase font-mono tracking-wider text-slate-500 mb-1.5">Ascendant (ASC)</label>
-              <select
-                value={Math.floor(ascendantAngle / 30) * 30}
-                onChange={(e) => {
-                  const baseAngle = parseInt(e.target.value);
-                  const currentOffset = ascendantAngle % 30;
-                  onChangeAscendantAngle(baseAngle + currentOffset);
-                }}
-                className="w-full bg-slate-950 border border-slate-800 rounded-lg px-2.5 py-1.5 text-xs text-slate-200 focus:outline-none focus:border-indigo-500 cursor-pointer"
+
+        {/* Module 3: Alignment Presets & Custom Alignments */}
+        <div className="bg-white/5 backdrop-blur-md border border-white/10 rounded-2xl p-5 shadow-2xl flex-1 flex flex-col justify-between">
+          <div>
+            <div className="flex items-center justify-between mb-4 pb-2 border-b border-white/5">
+              <h2 className="text-sm font-semibold tracking-wider text-slate-300 uppercase flex items-center gap-2">
+                <Sparkles className="w-4 h-4 text-indigo-400" />
+                Cosmic Alignment Presets
+              </h2>
+              
+              {false && (
+                <button
+                  onClick={handleOpenSaveForm}
+                  className="bg-indigo-600/20 hover:bg-indigo-600/40 border border-indigo-500/20 text-indigo-300 text-[11px] font-mono font-semibold py-1 px-3 rounded-lg transition-all duration-200 flex items-center gap-1 cursor-pointer"
+                >
+                  <Save className="w-3.5 h-3.5" />
+                  Save Alignment
+                </button>
+              )}
+            </div>
+
+            {/* Save Alignment Form */}
+            {false && (
+              <motion.div 
+                initial={{ opacity: 0, y: -10 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="bg-slate-950/80 border border-indigo-500/30 rounded-xl p-4 mb-4 space-y-3 shadow-inner"
               >
-                {ZODIAC_SIGNS.map(sign => (
-                  <option key={sign.id} value={sign.startAngle}>
-                    {sign.symbol} {sign.name} ({sign.element})
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            <div>
-              <label className="block text-[10px] uppercase font-mono tracking-wider text-slate-500 mb-1.5">Midheaven (MC)</label>
-              <select
-                value={Math.floor(mcAngle / 30) * 30}
-                onChange={(e) => {
-                  const baseAngle = parseInt(e.target.value);
-                  const currentOffset = mcAngle % 30;
-                  onChangeMcAngle(baseAngle + currentOffset);
-                }}
-                className="w-full bg-slate-950 border border-slate-800 rounded-lg px-2.5 py-1.5 text-xs text-slate-200 focus:outline-none focus:border-indigo-500 cursor-pointer"
-              >
-                {ZODIAC_SIGNS.map(sign => (
-                  <option key={sign.id} value={sign.startAngle}>
-                    {sign.symbol} {sign.name} ({sign.element})
-                  </option>
-                ))}
-              </select>
-            </div>
-          </div>
-
-          <div className="space-y-3">
-            <div>
-              <div className="flex justify-between text-[10px] uppercase font-mono tracking-wider text-slate-500 mb-1">
-                <span>ASC Precise Angle</span>
-                <span className="font-mono text-slate-300">{ascendantAngle}°</span>
-              </div>
-              <input
-                type="range"
-                min="0"
-                max="359"
-                step="1"
-                value={ascendantAngle}
-                onChange={(e) => onChangeAscendantAngle(parseInt(e.target.value))}
-                className="w-full accent-amber-500 h-1 bg-slate-950 rounded-lg appearance-none cursor-pointer"
-              />
-            </div>
-
-            <div>
-              <div className="flex justify-between text-[10px] uppercase font-mono tracking-wider text-slate-500 mb-1">
-                <span>MC Precise Angle</span>
-                <span className="font-mono text-slate-300">{mcAngle}°</span>
-              </div>
-              <input
-                type="range"
-                min="0"
-                max="359"
-                step="1"
-                value={mcAngle}
-                onChange={(e) => onChangeMcAngle(parseInt(e.target.value))}
-                className="w-full accent-purple-500 h-1 bg-slate-950 rounded-lg appearance-none cursor-pointer"
-              />
-            </div>
-          </div>
-
-          {/* Toggles for drones */}
-          <div className="mt-4 pt-4 border-t border-white/5 space-y-3">
-            <div className="flex items-center justify-between">
-              <div className="flex flex-col">
-                <span className="text-xs text-slate-300 font-medium">Ethereal Ascendant Drone</span>
-                <span className="text-[10px] text-slate-500">Continuous sub-bass root layer (ASC)</span>
-              </div>
-              <button
-                onClick={onToggleAscendantDrone}
-                className={`px-3 py-1.5 rounded-lg text-[11px] font-mono font-bold transition-all duration-200 cursor-pointer ${
-                  ascendantDroneActive
-                    ? 'bg-amber-500/10 text-amber-400 border border-amber-500/20 hover:bg-amber-500/20'
-                    : 'bg-slate-950 border border-slate-800 text-slate-500 hover:text-slate-400'
-                }`}
-              >
-                {ascendantDroneActive ? '● ACTIVE' : '○ MUTED'}
-              </button>
-            </div>
-
-            <div className="flex items-center justify-between">
-              <div className="flex flex-col">
-                <span className="text-xs text-slate-300 font-medium">Midheaven Resonance Drone</span>
-                <span className="text-[10px] text-slate-500">Mid-register ambient tone (MC)</span>
-              </div>
-              <button
-                onClick={onToggleMcDrone}
-                className={`px-3 py-1.5 rounded-lg text-[11px] font-mono font-bold transition-all duration-200 cursor-pointer ${
-                  mcDroneActive
-                    ? 'bg-purple-500/10 text-purple-400 border border-purple-500/20 hover:bg-purple-500/20'
-                    : 'bg-slate-950 border border-slate-800 text-slate-500 hover:text-slate-400'
-                }`}
-              >
-                {mcDroneActive ? '● ACTIVE' : '○ MUTED'}
-              </button>
-            </div>
-          </div>
-        </div>
-
-        {/* Module 3: Alignment Presets */}
-        <div className="bg-white/5 backdrop-blur-md border border-white/10 rounded-2xl p-5 shadow-2xl flex-1">
-          <h2 className="text-sm font-semibold tracking-wider text-slate-300 uppercase flex items-center gap-2 mb-4">
-            <Sparkles className="w-4 h-4 text-indigo-400" />
-            Cosmic Alignment Presets
-          </h2>
-          <p className="text-[11px] text-slate-500 mb-4 leading-normal">
-            Instantly arrange the planetary sphere into historical or mystical geometric aspects to trigger coordinated ambient movements.
-          </p>
-
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            {CELESTIAL_PRESETS.map((preset) => (
-              <button
-                key={preset.id}
-                onClick={() => onApplyPreset(preset)}
-                className="text-left bg-slate-950/60 hover:bg-slate-900 border border-slate-800/80 hover:border-indigo-500/50 rounded-xl p-3 transition-all duration-200 group cursor-pointer"
-              >
-                <div className="font-medium text-xs text-indigo-300 group-hover:text-indigo-200 flex items-center gap-1">
-                  <span>{preset.name}</span>
+                <div className="flex items-center justify-between">
+                  <h3 className="text-xs font-semibold text-indigo-300 font-mono flex items-center gap-1.5">
+                    <Save className="w-3.5 h-3.5" />
+                    Save Current Configuration
+                  </h3>
+                  <span className="text-[9px] text-slate-500 font-mono">Will persist in this browser</span>
                 </div>
-                <p className="text-[10px] text-slate-500 group-hover:text-slate-400 mt-1 line-clamp-2 leading-relaxed">
-                  {preset.description}
-                </p>
-              </button>
-            ))}
+
+                <div>
+                  <label className="block text-[9px] uppercase font-mono tracking-wider text-slate-500 mb-1">Alignment Name</label>
+                  <input
+                    type="text"
+                    value={presetName}
+                    onChange={(e) => setPresetName(e.target.value)}
+                    placeholder="E.g., Autumn Equinox Drone"
+                    className="w-full bg-slate-900 border border-slate-800 focus:border-indigo-500 rounded-lg px-2.5 py-1.5 text-xs text-slate-200 focus:outline-none transition-all"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-[9px] uppercase font-mono tracking-wider text-slate-500 mb-1">Description (Optional)</label>
+                  <textarea
+                    value={presetDesc}
+                    onChange={(e) => setPresetDesc(e.target.value)}
+                    placeholder="What cosmic energy does this alignment express?"
+                    rows={2}
+                    className="w-full bg-slate-900 border border-slate-800 focus:border-indigo-500 rounded-lg px-2.5 py-1.5 text-xs text-slate-200 focus:outline-none transition-all resize-none"
+                  />
+                </div>
+
+                <div className="flex gap-2 justify-end pt-1">
+                  <button
+                    onClick={() => setIsSaving(false)}
+                    className="px-3 py-1.5 rounded-lg text-[11px] text-slate-400 hover:text-slate-200 transition font-medium cursor-pointer"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    onClick={handleConfirmSave}
+                    disabled={!presetName.trim()}
+                    className="bg-indigo-600 hover:bg-indigo-500 disabled:opacity-40 disabled:cursor-not-allowed text-white px-4 py-1.5 rounded-lg text-[11px] transition font-semibold cursor-pointer"
+                  >
+                    Confirm Save
+                  </button>
+                </div>
+              </motion.div>
+            )}
+
+            <p className="text-[11px] text-slate-400 mb-4 leading-relaxed">
+              Instantly arrange the planetary sphere into historical or mystical geometric aspects to trigger coordinated ambient movements.
+            </p>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              {CELESTIAL_PRESETS.map((preset) => (
+                <button
+                  key={preset.id}
+                  onClick={() => onApplyPreset(preset)}
+                  className="text-left bg-slate-950/60 hover:bg-slate-900 border border-slate-800/80 hover:border-indigo-500/50 rounded-xl p-3 transition-all duration-200 group cursor-pointer"
+                >
+                  <div className="font-semibold text-[11px] text-indigo-300 group-hover:text-indigo-200 flex items-center gap-1">
+                    <span>{preset.name}</span>
+                  </div>
+                  <p className="text-[10px] text-slate-500 group-hover:text-slate-400 mt-1 line-clamp-2 leading-normal">
+                    {preset.description}
+                  </p>
+                </button>
+              ))}
+            </div>
+
+            {/* Custom Presets Section */}
+            {customPresets.length > 0 && (
+              <div className="mt-5 pt-4 border-t border-white/5">
+                <h3 className="text-[10px] uppercase font-mono tracking-wider text-indigo-400 font-bold mb-3 flex items-center gap-1.5">
+                  <Sparkles className="w-3 h-3 text-indigo-400 animate-pulse" />
+                  My Custom Saved Alignments
+                </h3>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  {customPresets.map((preset) => (
+                    <div
+                      key={preset.id}
+                      className="relative text-left bg-slate-950/90 border border-slate-800/80 hover:border-indigo-500/40 rounded-xl p-3 transition-all duration-200 group flex justify-between items-start gap-2"
+                    >
+                      <button
+                        onClick={() => onApplyPreset(preset)}
+                        className="flex-1 text-left cursor-pointer"
+                      >
+                        <div className="font-semibold text-[11px] text-indigo-300 group-hover:text-indigo-200 flex items-center gap-1">
+                          <span>{preset.name}</span>
+                          <span className="text-[8px] font-mono px-1.5 py-0.5 bg-indigo-500/15 text-indigo-300 rounded uppercase">
+                            {preset.rootNote}
+                          </span>
+                        </div>
+                        <p className="text-[10px] text-slate-500 group-hover:text-slate-400 mt-1 line-clamp-2 leading-normal">
+                          {preset.description}
+                        </p>
+                      </button>
+
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          onDeletePreset(preset.id);
+                        }}
+                        className="opacity-0 group-hover:opacity-100 hover:text-red-400 text-slate-600 p-1 rounded hover:bg-white/5 transition-all duration-150 cursor-pointer"
+                        title="Delete Alignment"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
         </div>
       </div>

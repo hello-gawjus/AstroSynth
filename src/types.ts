@@ -51,6 +51,10 @@ export interface CelestialPreset {
   planets: { id: string; angle: number; active: boolean }[];
   scaleId: string;
   rootNote: string; // e.g., 'C'
+  ascendantAngle?: number;
+  mcAngle?: number;
+  ascendantDroneActive?: boolean;
+  mcDroneActive?: boolean;
 }
 
 export interface SynthParams {
