@@ -1,5 +1,5 @@
 {
-  "name": "Astrology Harmonic Synthesizer",
+  "name": "Astro Harmonic",
   "description": "An interactive celestial ambient synthesizer mapping planetary alignments, zodiac elements, and aspects to lush real-time Web Audio API soundscapes.",
   "requestFramePermissions": [],
   "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
